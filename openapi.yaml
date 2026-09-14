@@ -1,0 +1,1077 @@
+openapi: 3.0.3
+info:
+  title: Vericlause
+  version: 0.1.0
+  description: ai-assisted smart-contract assurance desk with formal verification, SBST, and release gates.
+  x-product-slug: ai-decentralized-vericlause
+  x-source: ai-in-decentralized+ai/research-paper_1802.04451/
+servers:
+- url: https://api.example.com
+tags:
+- name: ContractProjects
+  description: Contract portfolio
+- name: AnalysisJobs
+  description: Formal and SBST jobs
+- name: Findings
+  description: Assured defects
+- name: Waivers
+  description: Dual-control exceptions
+- name: ReleaseGates
+  description: Deploy blockers
+- name: AssuranceArtefacts
+  description: Signed reports
+paths:
+  /v1/contract-projects:
+    get:
+      operationId: listContractProjects
+      tags:
+      - ContractProjects
+      summary: List ContractProject
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      parameters:
+      - $ref: '#/components/parameters/Cursor'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListEnvelopeContractProject'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: createContractProject
+      tags:
+      - ContractProjects
+      summary: Create ContractProject
+      security:
+      - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContractProjectCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataEnvelopeContractProject'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/contract-projects/{projectId}:
+    parameters:
+    - $ref: '#/components/parameters/ProjectId'
+    get:
+      operationId: getContractProject
+      tags:
+      - ContractProjects
+      summary: Get ContractProject
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataEnvelopeContractProject'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/analysis-jobs:
+    get:
+      operationId: listAnalysisJobs
+      tags:
+      - AnalysisJobs
+      summary: List AnalysisJob
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      parameters:
+      - $ref: '#/components/parameters/Cursor'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListEnvelopeAnalysisJob'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: createAnalysisJob
+      tags:
+      - AnalysisJobs
+      summary: Create AnalysisJob
+      security:
+      - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalysisJobCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataEnvelopeAnalysisJob'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/analysis-jobs/{jobId}:
+    parameters:
+    - $ref: '#/components/parameters/JobId'
+    get:
+      operationId: getAnalysisJob
+      tags:
+      - AnalysisJobs
+      summary: Get AnalysisJob
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataEnvelopeAnalysisJob'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/findings:
+    get:
+      operationId: listFindings
+      tags:
+      - Findings
+      summary: List Finding
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      parameters:
+      - $ref: '#/components/parameters/Cursor'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListEnvelopeFinding'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: createFinding
+      tags:
+      - Findings
+      summary: Create Finding
+      security:
+      - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FindingCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataEnvelopeFinding'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/findings/{findingId}:
+    parameters:
+    - $ref: '#/components/parameters/FindingId'
+    get:
+      operationId: getFinding
+      tags:
+      - Findings
+      summary: Get Finding
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataEnvelopeFinding'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/waivers:
+    get:
+      operationId: listWaivers
+      tags:
+      - Waivers
+      summary: List Waiver
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      parameters:
+      - $ref: '#/components/parameters/Cursor'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListEnvelopeWaiver'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: proposeWaiver
+      tags:
+      - Waivers
+      summary: Create Waiver
+      security:
+      - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WaiverCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataEnvelopeWaiver'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/waivers/{waiverId}:
+    parameters:
+    - $ref: '#/components/parameters/WaiverId'
+    get:
+      operationId: getWaiver
+      tags:
+      - Waivers
+      summary: Get Waiver
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataEnvelopeWaiver'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/waivers/{waiverId}/approve:
+    parameters:
+    - $ref: '#/components/parameters/WaiverId'
+    post:
+      operationId: approveWaiver
+      tags:
+      - Waivers
+      summary: Dual-control approve waiver
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataEnvelopeWaiver'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /v1/release-gates:
+    get:
+      operationId: listReleaseGates
+      tags:
+      - ReleaseGates
+      summary: List ReleaseGate
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      parameters:
+      - $ref: '#/components/parameters/Cursor'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListEnvelopeReleaseGate'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: evaluateReleaseGate
+      tags:
+      - ReleaseGates
+      summary: Create ReleaseGate
+      security:
+      - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReleaseGateCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataEnvelopeReleaseGate'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/release-gates/{gateId}:
+    parameters:
+    - $ref: '#/components/parameters/GateId'
+    get:
+      operationId: getReleaseGate
+      tags:
+      - ReleaseGates
+      summary: Get ReleaseGate
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataEnvelopeReleaseGate'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/assurance-artefacts:
+    get:
+      operationId: listAssuranceArtefacts
+      tags:
+      - AssuranceArtefacts
+      summary: List AssuranceArtefact
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      parameters:
+      - $ref: '#/components/parameters/Cursor'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListEnvelopeAssuranceArtefact'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: createAssuranceArtefact
+      tags:
+      - AssuranceArtefacts
+      summary: Create AssuranceArtefact
+      security:
+      - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssuranceArtefactCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataEnvelopeAssuranceArtefact'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/assurance-artefacts/{artefactId}:
+    parameters:
+    - $ref: '#/components/parameters/ArtefactId'
+    get:
+      operationId: getAssuranceArtefact
+      tags:
+      - AssuranceArtefacts
+      summary: Get AssuranceArtefact
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataEnvelopeAssuranceArtefact'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/assurance-artefacts/{artefactId}/sign:
+    parameters:
+    - $ref: '#/components/parameters/ArtefactId'
+    post:
+      operationId: signAssuranceArtefact
+      tags:
+      - AssuranceArtefacts
+      summary: Sign immutable assurance report
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataEnvelopeAssuranceArtefact'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Cursor:
+      name: cursor
+      in: query
+      schema:
+        type: string
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+    ProjectId:
+      name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    JobId:
+      name: jobId
+      in: path
+      required: true
+      schema:
+        type: string
+    FindingId:
+      name: findingId
+      in: path
+      required: true
+      schema:
+        type: string
+    WaiverId:
+      name: waiverId
+      in: path
+      required: true
+      schema:
+        type: string
+    GateId:
+      name: gateId
+      in: path
+      required: true
+      schema:
+        type: string
+    ArtefactId:
+      name: artefactId
+      in: path
+      required: true
+      schema:
+        type: string
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    BadRequest:
+      description: Bad request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Conflict:
+      description: Conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    ResponseMeta:
+      type: object
+      required:
+      - requestId
+      - timestamp
+      properties:
+        requestId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    Problem:
+      type: object
+      required:
+      - type
+      - title
+      - status
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+    ContractProject:
+      type: object
+      required:
+      - id
+      - name
+      - status
+      - language
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum:
+          - active
+          - archived
+        language:
+          type: string
+          enum:
+          - solidity
+          - vyper
+          - other
+        repoUri:
+          type: string
+          format: uri
+    ContractProjectCreate:
+      type: object
+      required:
+      - name
+      - status
+      - language
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum:
+          - active
+          - archived
+        language:
+          type: string
+          enum:
+          - solidity
+          - vyper
+          - other
+        repoUri:
+          type: string
+          format: uri
+    DataEnvelopeContractProject:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          $ref: '#/components/schemas/ContractProject'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    ListEnvelopeContractProject:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          type: object
+          required:
+          - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/ContractProject'
+            nextCursor:
+              type: string
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    AnalysisJob:
+      type: object
+      required:
+      - id
+      - projectId
+      - versionRef
+      - jobType
+      - status
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        versionRef:
+          type: string
+        jobType:
+          type: string
+          enum:
+          - formalVerification
+          - searchBasedTesting
+          - combined
+        status:
+          type: string
+          enum:
+          - queued
+          - running
+          - succeeded
+          - failed
+        startedAt:
+          type: string
+          format: date-time
+        finishedAt:
+          type: string
+          format: date-time
+    AnalysisJobCreate:
+      type: object
+      required:
+      - projectId
+      - versionRef
+      - jobType
+      properties:
+        projectId:
+          type: string
+        versionRef:
+          type: string
+        jobType:
+          type: string
+          enum:
+          - formalVerification
+          - searchBasedTesting
+          - combined
+        status:
+          type: string
+          enum:
+          - queued
+          - running
+          - succeeded
+          - failed
+        startedAt:
+          type: string
+          format: date-time
+        finishedAt:
+          type: string
+          format: date-time
+    DataEnvelopeAnalysisJob:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          $ref: '#/components/schemas/AnalysisJob'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    ListEnvelopeAnalysisJob:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          type: object
+          required:
+          - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/AnalysisJob'
+            nextCursor:
+              type: string
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    Finding:
+      type: object
+      required:
+      - id
+      - jobId
+      - severity
+      - title
+      - status
+      properties:
+        id:
+          type: string
+        jobId:
+          type: string
+        severity:
+          type: string
+          enum:
+          - info
+          - low
+          - medium
+          - high
+          - critical
+        title:
+          type: string
+        property:
+          type: string
+        trace:
+          type: string
+        status:
+          type: string
+          enum:
+          - open
+          - waived
+          - fixed
+          - acceptedRisk
+    FindingCreate:
+      type: object
+      required:
+      - jobId
+      - severity
+      - title
+      properties:
+        jobId:
+          type: string
+        severity:
+          type: string
+          enum:
+          - info
+          - low
+          - medium
+          - high
+          - critical
+        title:
+          type: string
+        property:
+          type: string
+        trace:
+          type: string
+        status:
+          type: string
+          enum:
+          - open
+          - waived
+          - fixed
+          - acceptedRisk
+    DataEnvelopeFinding:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          $ref: '#/components/schemas/Finding'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    ListEnvelopeFinding:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          type: object
+          required:
+          - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Finding'
+            nextCursor:
+              type: string
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    Waiver:
+      type: object
+      required:
+      - id
+      - findingId
+      - status
+      - expiresAt
+      - justification
+      properties:
+        id:
+          type: string
+        findingId:
+          type: string
+        status:
+          type: string
+          enum:
+          - proposed
+          - approved
+          - expired
+          - revoked
+        expiresAt:
+          type: string
+          format: date-time
+        justification:
+          type: string
+        approverCount:
+          type: integer
+    WaiverCreate:
+      type: object
+      required:
+      - findingId
+      - expiresAt
+      - justification
+      properties:
+        findingId:
+          type: string
+        status:
+          type: string
+          enum:
+          - proposed
+          - approved
+          - expired
+          - revoked
+        expiresAt:
+          type: string
+          format: date-time
+        justification:
+          type: string
+        approverCount:
+          type: integer
+    DataEnvelopeWaiver:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          $ref: '#/components/schemas/Waiver'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    ListEnvelopeWaiver:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          type: object
+          required:
+          - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Waiver'
+            nextCursor:
+              type: string
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    ReleaseGate:
+      type: object
+      required:
+      - id
+      - projectId
+      - versionRef
+      - decision
+      - status
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        versionRef:
+          type: string
+        decision:
+          type: string
+          enum:
+          - allow
+          - block
+        status:
+          type: string
+          enum:
+          - pending
+          - final
+        openCriticalCount:
+          type: integer
+    ReleaseGateCreate:
+      type: object
+      required:
+      - projectId
+      - versionRef
+      properties:
+        projectId:
+          type: string
+        versionRef:
+          type: string
+        decision:
+          type: string
+          enum:
+          - allow
+          - block
+        status:
+          type: string
+          enum:
+          - pending
+          - final
+        openCriticalCount:
+          type: integer
+    DataEnvelopeReleaseGate:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          $ref: '#/components/schemas/ReleaseGate'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    ListEnvelopeReleaseGate:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          type: object
+          required:
+          - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/ReleaseGate'
+            nextCursor:
+              type: string
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    AssuranceArtefact:
+      type: object
+      required:
+      - id
+      - projectId
+      - versionRef
+      - status
+      - signedAt
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        versionRef:
+          type: string
+        status:
+          type: string
+          enum:
+          - draft
+          - signed
+        signedAt:
+          type: string
+          format: date-time
+        downloadUri:
+          type: string
+          format: uri
+    AssuranceArtefactCreate:
+      type: object
+      required:
+      - projectId
+      - versionRef
+      properties:
+        projectId:
+          type: string
+        versionRef:
+          type: string
+        status:
+          type: string
+          enum:
+          - draft
+          - signed
+        signedAt:
+          type: string
+          format: date-time
+        downloadUri:
+          type: string
+          format: uri
+    DataEnvelopeAssuranceArtefact:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          $ref: '#/components/schemas/AssuranceArtefact'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    ListEnvelopeAssuranceArtefact:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          type: object
+          required:
+          - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/AssuranceArtefact'
+            nextCursor:
+              type: string
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
