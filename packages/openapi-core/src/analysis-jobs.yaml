@@ -1,0 +1,190 @@
+openapi: 3.1.0
+info:
+  title: Vericlause Analysis Jobs API
+  version: 0.1.0
+  description: |
+    Formal verification and search-based testing jobs with CI SLA signals (BR-1, BR-8).
+  license:
+    name: Proprietary
+    url: https://vericlause.local/license
+  x-domain: job
+servers:
+  - url: https://api.vericlause.local
+    description: Vericlause API
+security:
+  - bearerAuth: []
+  - apiKey: []
+tags:
+  - name: AnalysisJobs
+    description: Formal and SBST analysis jobs
+paths:
+  /v1/analysis-jobs:
+    get:
+      operationId: listAnalysisJobs
+      tags: [AnalysisJobs]
+      summary: List analysis jobs
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: projectId
+          in: query
+          schema:
+            $ref: ./common/primitives.yaml#/components/schemas/ProjectId
+        - name: versionRef
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [queued, running, succeeded, failed, slaBreached]
+        - name: jobType
+          in: query
+          schema:
+            type: string
+            enum: [formalVerification, searchBasedTesting, combined]
+      responses:
+        '200':
+          description: Jobs page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisJobListResponse'
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createAnalysisJob
+      tags: [AnalysisJobs]
+      summary: Start an analysis job
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalysisJobCreateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisJobResponse'
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/analysis-jobs/{jobId}:
+    get:
+      operationId: getAnalysisJob
+      tags: [AnalysisJobs]
+      summary: Get an analysis job
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            $ref: ./common/primitives.yaml#/components/schemas/AnalysisJobId
+      responses:
+        '200':
+          description: Job
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisJobResponse'
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth
+  schemas:
+    AnalysisJobType:
+      type: string
+      enum: [formalVerification, searchBasedTesting, combined]
+    AnalysisJobStatus:
+      type: string
+      enum: [queued, running, succeeded, failed, slaBreached]
+    SlaPolicy:
+      type: string
+      enum: [failClosed, failOpen]
+    AnalysisJob:
+      type: object
+      required: [jobId, projectId, versionRef, jobType, status, createdAt]
+      properties:
+        jobId:
+          $ref: ./common/primitives.yaml#/components/schemas/AnalysisJobId
+        projectId:
+          $ref: ./common/primitives.yaml#/components/schemas/ProjectId
+        versionRef:
+          type: string
+          minLength: 1
+        jobType:
+          $ref: '#/components/schemas/AnalysisJobType'
+        status:
+          $ref: '#/components/schemas/AnalysisJobStatus'
+        slaPolicy:
+          $ref: '#/components/schemas/SlaPolicy'
+        slaBreached:
+          type: boolean
+        startedAt:
+          type: string
+          format: date-time
+        finishedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    AnalysisJobCreateRequest:
+      type: object
+      required: [projectId, versionRef, jobType]
+      properties:
+        projectId:
+          $ref: ./common/primitives.yaml#/components/schemas/ProjectId
+        versionRef:
+          type: string
+          minLength: 1
+        jobType:
+          $ref: '#/components/schemas/AnalysisJobType'
+        slaPolicy:
+          $ref: '#/components/schemas/SlaPolicy'
+          default: failClosed
+    AnalysisJobResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/AnalysisJob'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    AnalysisJobListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnalysisJob'
+        nextCursor:
+          type: string
+    AnalysisJobListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/AnalysisJobListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

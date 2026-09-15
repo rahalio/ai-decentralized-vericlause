@@ -1,0 +1,274 @@
+openapi: 3.1.0
+info:
+  title: Vericlause Specifications API
+  version: 0.1.0
+  description: |
+    Specification assist — invariants, access control, value-flow properties;
+    infer from traces; historical exploit templates (BR-3, BR-4, BR-11).
+  license:
+    name: Proprietary
+    url: https://vericlause.local/license
+  x-domain: spc
+servers:
+  - url: https://api.vericlause.local
+    description: Vericlause API
+security:
+  - bearerAuth: []
+  - apiKey: []
+tags:
+  - name: Specifications
+    description: Formal properties attached to contract versions
+paths:
+  /v1/specifications:
+    get:
+      operationId: listSpecifications
+      tags: [Specifications]
+      summary: List specifications
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: projectId
+          in: query
+          schema:
+            $ref: ./common/primitives.yaml#/components/schemas/ProjectId
+        - name: versionRef
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, accepted, required, inferred]
+      responses:
+        '200':
+          description: Specs page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpecificationListResponse'
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createSpecification
+      tags: [Specifications]
+      summary: Create or attach a specification
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpecificationCreateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpecificationResponse'
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/specifications/{specId}:
+    get:
+      operationId: getSpecification
+      tags: [Specifications]
+      summary: Get a specification
+      parameters:
+        - name: specId
+          in: path
+          required: true
+          schema:
+            $ref: ./common/primitives.yaml#/components/schemas/SpecId
+      responses:
+        '200':
+          description: Spec
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpecificationResponse'
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    patch:
+      operationId: updateSpecification
+      tags: [Specifications]
+      summary: Edit a specification
+      parameters:
+        - name: specId
+          in: path
+          required: true
+          schema:
+            $ref: ./common/primitives.yaml#/components/schemas/SpecId
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpecificationUpdateRequest'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpecificationResponse'
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/specifications/{specId}/accept:
+    post:
+      operationId: acceptInferredSpecification
+      tags: [Specifications]
+      summary: Accept an inferred specification candidate
+      parameters:
+        - name: specId
+          in: path
+          required: true
+          schema:
+            $ref: ./common/primitives.yaml#/components/schemas/SpecId
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '200':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpecificationResponse'
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        '409':
+          $ref: ./common/responses.yaml#/components/responses/Conflict
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth
+  schemas:
+    SpecKind:
+      type: string
+      enum: [invariant, accessControl, valueFlow]
+    SpecStatus:
+      type: string
+      enum: [draft, accepted, required, inferred]
+    HistoricalTemplate:
+      type: string
+      enum: [reentrancy, uncheckedCall, custodyBug, custom]
+    Specification:
+      type: object
+      required: [specId, projectId, versionRef, kind, title, status, requiredForGate, createdAt, updatedAt]
+      properties:
+        specId:
+          $ref: ./common/primitives.yaml#/components/schemas/SpecId
+        projectId:
+          $ref: ./common/primitives.yaml#/components/schemas/ProjectId
+        versionRef:
+          type: string
+          minLength: 1
+        kind:
+          $ref: '#/components/schemas/SpecKind'
+        title:
+          type: string
+          minLength: 1
+        body:
+          type: string
+          description: Formal property text or DSL
+        status:
+          $ref: '#/components/schemas/SpecStatus'
+        requiredForGate:
+          type: boolean
+        historicalTemplate:
+          $ref: '#/components/schemas/HistoricalTemplate'
+        inferredFromTrace:
+          type: boolean
+          description: True when refined from runtime traces (never auto-deploys)
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    SpecificationCreateRequest:
+      type: object
+      required: [projectId, versionRef, kind, title]
+      properties:
+        projectId:
+          $ref: ./common/primitives.yaml#/components/schemas/ProjectId
+        versionRef:
+          type: string
+          minLength: 1
+        kind:
+          $ref: '#/components/schemas/SpecKind'
+        title:
+          type: string
+          minLength: 1
+        body:
+          type: string
+        requiredForGate:
+          type: boolean
+          default: false
+        historicalTemplate:
+          $ref: '#/components/schemas/HistoricalTemplate'
+        status:
+          $ref: '#/components/schemas/SpecStatus'
+    SpecificationUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        body:
+          type: string
+        requiredForGate:
+          type: boolean
+        status:
+          $ref: '#/components/schemas/SpecStatus'
+        historicalTemplate:
+          $ref: '#/components/schemas/HistoricalTemplate'
+    SpecificationResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/Specification'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    SpecificationListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Specification'
+        nextCursor:
+          type: string
+    SpecificationListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/SpecificationListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

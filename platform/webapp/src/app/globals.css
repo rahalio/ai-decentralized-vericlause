@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-ink: #e8ecf1;
+  --color-stone-950: #0b0e14;
+  --color-stone-900: #141821;
+  --color-stone-700: #2c3340;
+  --color-verdict: #3daa78;
+  --color-injunction: #d94a4a;
+  --color-provisional: #d4a017;
+  --color-notary: #8fa3b8;
+  --color-mute: #8b93a0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 48px;
+  --radius-sm: 3px;
+  --radius-md: 6px;
+  --motion-gavel: 180ms ease-out;
+  --motion-waiver: 240ms ease-in-out;
+  --motion-trace: 200ms linear;
+}
+
+html,
+body {
+  min-height: 100%;
+  background: var(--color-stone-950);
+  color: var(--color-ink);
+}
+
+body {
+  background-image:
+    linear-gradient(90deg, rgba(44, 51, 64, 0.35) 1px, transparent 1px),
+    radial-gradient(ellipse at 20% 0%, rgba(143, 163, 184, 0.08), transparent 55%);
+  background-size: 72px 100%, 100% 100%;
+  background-attachment: fixed;
+}
+
+@keyframes gavel-in {
+  0% { opacity: 0; transform: translateY(-4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes waiver-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(212, 160, 23, 0.4); }
+  100% { box-shadow: 0 0 0 8px rgba(212, 160, 23, 0); }
+}
+
+@keyframes trace-reveal {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.motion-gavel {
+  animation: gavel-in var(--motion-gavel);
+}
+
+.motion-waiver {
+  animation: waiver-pulse var(--motion-waiver);
+}
+
+.motion-trace {
+  animation: trace-reveal var(--motion-trace);
+}
+
+.text-ink { color: var(--color-ink); }
+.text-mute { color: var(--color-mute); }
+.text-notary { color: var(--color-notary); }
+.text-verdict { color: var(--color-verdict); }
+.text-injunction { color: var(--color-injunction); }
+.text-provisional { color: var(--color-provisional); }
+.bg-stone-950 { background-color: var(--color-stone-950); }
+.bg-stone-900 { background-color: var(--color-stone-900); }
+.border-stone { border-color: var(--color-stone-700); }
+.font-display { font-family: var(--font-display), Georgia, serif; }
+.font-mono { font-family: var(--font-mono), ui-monospace, monospace; }

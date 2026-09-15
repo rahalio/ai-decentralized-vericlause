@@ -1,0 +1,204 @@
+openapi: 3.1.0
+info:
+  title: Vericlause Findings API
+  version: 0.1.0
+  description: |
+    Assured defects with explainable property, trace, and suggested root cause (BR-5, BR-9).
+  license:
+    name: Proprietary
+    url: https://vericlause.local/license
+  x-domain: fnd
+servers:
+  - url: https://api.vericlause.local
+    description: Vericlause API
+security:
+  - bearerAuth: []
+  - apiKey: []
+tags:
+  - name: Findings
+    description: Assured defects from analysis jobs
+paths:
+  /v1/findings:
+    get:
+      operationId: listFindings
+      tags: [Findings]
+      summary: List findings
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: projectId
+          in: query
+          schema:
+            $ref: ./common/primitives.yaml#/components/schemas/ProjectId
+        - name: jobId
+          in: query
+          schema:
+            $ref: ./common/primitives.yaml#/components/schemas/AnalysisJobId
+        - name: severity
+          in: query
+          schema:
+            type: string
+            enum: [info, low, medium, high, critical]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, waived, fixed, acceptedRisk]
+      responses:
+        '200':
+          description: Findings page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FindingListResponse'
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createFinding
+      tags: [Findings]
+      summary: Record a finding
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FindingCreateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FindingResponse'
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/findings/{findingId}:
+    get:
+      operationId: getFinding
+      tags: [Findings]
+      summary: Get a finding with property and trace
+      parameters:
+        - name: findingId
+          in: path
+          required: true
+          schema:
+            $ref: ./common/primitives.yaml#/components/schemas/FindingId
+      responses:
+        '200':
+          description: Finding
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FindingResponse'
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth
+  schemas:
+    FindingSeverity:
+      type: string
+      enum: [info, low, medium, high, critical]
+    FindingStatus:
+      type: string
+      enum: [open, waived, fixed, acceptedRisk]
+    Finding:
+      type: object
+      required: [findingId, jobId, projectId, versionRef, severity, title, status, createdAt, updatedAt]
+      properties:
+        findingId:
+          $ref: ./common/primitives.yaml#/components/schemas/FindingId
+        jobId:
+          $ref: ./common/primitives.yaml#/components/schemas/AnalysisJobId
+        projectId:
+          $ref: ./common/primitives.yaml#/components/schemas/ProjectId
+        versionRef:
+          type: string
+          minLength: 1
+        severity:
+          $ref: '#/components/schemas/FindingSeverity'
+        title:
+          type: string
+          minLength: 1
+        property:
+          type: string
+          description: Failing formal property or SBST oracle
+        trace:
+          type: string
+          description: Reproducible failing trace
+        suggestedRootCause:
+          type: string
+        status:
+          $ref: '#/components/schemas/FindingStatus'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    FindingCreateRequest:
+      type: object
+      required: [jobId, projectId, versionRef, severity, title]
+      properties:
+        jobId:
+          $ref: ./common/primitives.yaml#/components/schemas/AnalysisJobId
+        projectId:
+          $ref: ./common/primitives.yaml#/components/schemas/ProjectId
+        versionRef:
+          type: string
+          minLength: 1
+        severity:
+          $ref: '#/components/schemas/FindingSeverity'
+        title:
+          type: string
+          minLength: 1
+        property:
+          type: string
+        trace:
+          type: string
+        suggestedRootCause:
+          type: string
+        status:
+          $ref: '#/components/schemas/FindingStatus'
+          default: open
+    FindingResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/Finding'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    FindingListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Finding'
+        nextCursor:
+          type: string
+    FindingListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/FindingListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

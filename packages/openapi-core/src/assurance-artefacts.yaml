@@ -1,0 +1,259 @@
+openapi: 3.1.0
+info:
+  title: Vericlause Assurance Artefacts API
+  version: 0.1.0
+  description: |
+    Signed immutable assurance reports and auditor export packs (BR-6, BR-10).
+  license:
+    name: Proprietary
+    url: https://vericlause.local/license
+  x-domain: art
+servers:
+  - url: https://api.vericlause.local
+    description: Vericlause API
+security:
+  - bearerAuth: []
+  - apiKey: []
+tags:
+  - name: AssuranceArtefacts
+    description: Signed immutable assurance reports
+paths:
+  /v1/assurance-artefacts:
+    get:
+      operationId: listAssuranceArtefacts
+      tags: [AssuranceArtefacts]
+      summary: List assurance artefacts
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: projectId
+          in: query
+          schema:
+            $ref: ./common/primitives.yaml#/components/schemas/ProjectId
+        - name: versionRef
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, signed]
+      responses:
+        '200':
+          description: Artefacts page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssuranceArtefactListResponse'
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createAssuranceArtefact
+      tags: [AssuranceArtefacts]
+      summary: Create a draft assurance artefact
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssuranceArtefactCreateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssuranceArtefactResponse'
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/assurance-artefacts/{artefactId}:
+    get:
+      operationId: getAssuranceArtefact
+      tags: [AssuranceArtefacts]
+      summary: Get an assurance artefact
+      parameters:
+        - name: artefactId
+          in: path
+          required: true
+          schema:
+            $ref: ./common/primitives.yaml#/components/schemas/ArtefactId
+      responses:
+        '200':
+          description: Artefact
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssuranceArtefactResponse'
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/assurance-artefacts/{artefactId}/sign:
+    post:
+      operationId: signAssuranceArtefact
+      tags: [AssuranceArtefacts]
+      summary: Sign an immutable assurance report
+      parameters:
+        - name: artefactId
+          in: path
+          required: true
+          schema:
+            $ref: ./common/primitives.yaml#/components/schemas/ArtefactId
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '200':
+          description: Signed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssuranceArtefactResponse'
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        '409':
+          $ref: ./common/responses.yaml#/components/responses/Conflict
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/assurance-artefacts/{artefactId}/auditor-export:
+    post:
+      operationId: createAuditorExportPack
+      tags: [AssuranceArtefacts]
+      summary: Generate one-click auditor export pack
+      parameters:
+        - name: artefactId
+          in: path
+          required: true
+          schema:
+            $ref: ./common/primitives.yaml#/components/schemas/ArtefactId
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '200':
+          description: Export pack ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditorExportPackResponse'
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        '409':
+          $ref: ./common/responses.yaml#/components/responses/Conflict
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth
+  schemas:
+    ArtefactStatus:
+      type: string
+      enum: [draft, signed]
+    AssuranceArtefact:
+      type: object
+      required: [artefactId, projectId, versionRef, status, createdAt, updatedAt]
+      properties:
+        artefactId:
+          $ref: ./common/primitives.yaml#/components/schemas/ArtefactId
+        projectId:
+          $ref: ./common/primitives.yaml#/components/schemas/ProjectId
+        versionRef:
+          type: string
+          minLength: 1
+        status:
+          $ref: '#/components/schemas/ArtefactStatus'
+        signedAt:
+          type: string
+          format: date-time
+        signatureHash:
+          type: string
+          description: Content hash of the immutable signed report
+        downloadUri:
+          type: string
+          format: uri
+        privateMode:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    AssuranceArtefactCreateRequest:
+      type: object
+      required: [projectId, versionRef]
+      properties:
+        projectId:
+          $ref: ./common/primitives.yaml#/components/schemas/ProjectId
+        versionRef:
+          type: string
+          minLength: 1
+        privateMode:
+          type: boolean
+          default: true
+    AuditorExportPack:
+      type: object
+      required: [artefactId, downloadUri, includesSpecs, includesFindings, includesWaivers, generatedAt]
+      properties:
+        artefactId:
+          $ref: ./common/primitives.yaml#/components/schemas/ArtefactId
+        downloadUri:
+          type: string
+          format: uri
+        includesSpecs:
+          type: boolean
+        includesFindings:
+          type: boolean
+        includesWaivers:
+          type: boolean
+        generatedAt:
+          type: string
+          format: date-time
+    AssuranceArtefactResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/AssuranceArtefact'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    AssuranceArtefactListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssuranceArtefact'
+        nextCursor:
+          type: string
+    AssuranceArtefactListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/AssuranceArtefactListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    AuditorExportPackResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/AuditorExportPack'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

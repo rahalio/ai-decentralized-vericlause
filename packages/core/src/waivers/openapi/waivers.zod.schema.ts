@@ -1,0 +1,499 @@
+import { makeApi, Zodios, type ZodiosOptions } from '@zodios/core';
+import { z } from 'zod';
+
+const proposeWaiver_Body = z
+  .object({
+    findingId: z.string().regex(/^fnd_[0-9A-HJKMNP-TV-Z]{26}$/),
+    expiresAt: z.string().datetime({ offset: true }),
+    justification: z.string().min(1),
+    requiredApprovals: z.number().int().gte(2).optional().default(2),
+  })
+  .passthrough();
+const WaiverStatus = z.enum(['proposed', 'approved', 'expired', 'revoked']);
+const Waiver = z
+  .object({
+    waiverId: z.string().regex(/^wvr_[0-9A-HJKMNP-TV-Z]{26}$/),
+    findingId: z.string().regex(/^fnd_[0-9A-HJKMNP-TV-Z]{26}$/),
+    status: z.enum(['proposed', 'approved', 'expired', 'revoked']),
+    expiresAt: z.string().datetime({ offset: true }),
+    justification: z.string().min(1),
+    requiredApprovals: z.number().int().gte(2).default(2),
+    approverCount: z.number().int().gte(0),
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
+  })
+  .passthrough();
+const WaiverCreateRequest = z
+  .object({
+    findingId: z.string().regex(/^fnd_[0-9A-HJKMNP-TV-Z]{26}$/),
+    expiresAt: z.string().datetime({ offset: true }),
+    justification: z.string().min(1),
+    requiredApprovals: z.number().int().gte(2).optional().default(2),
+  })
+  .passthrough();
+const WaiverApproveRequest = z
+  .object({ note: z.string().max(2000) })
+  .partial()
+  .passthrough();
+const WaiverResponse = z
+  .object({
+    data: z
+      .object({
+        waiverId: z.string().regex(/^wvr_[0-9A-HJKMNP-TV-Z]{26}$/),
+        findingId: z.string().regex(/^fnd_[0-9A-HJKMNP-TV-Z]{26}$/),
+        status: z.enum(['proposed', 'approved', 'expired', 'revoked']),
+        expiresAt: z.string().datetime({ offset: true }),
+        justification: z.string().min(1),
+        requiredApprovals: z.number().int().gte(2).default(2),
+        approverCount: z.number().int().gte(0),
+        createdAt: z.string().datetime({ offset: true }),
+        updatedAt: z.string().datetime({ offset: true }),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const WaiverListData = z
+  .object({
+    items: z.array(
+      z
+        .object({
+          waiverId: z.string().regex(/^wvr_[0-9A-HJKMNP-TV-Z]{26}$/),
+          findingId: z.string().regex(/^fnd_[0-9A-HJKMNP-TV-Z]{26}$/),
+          status: z.enum(['proposed', 'approved', 'expired', 'revoked']),
+          expiresAt: z.string().datetime({ offset: true }),
+          justification: z.string().min(1),
+          requiredApprovals: z.number().int().gte(2).default(2),
+          approverCount: z.number().int().gte(0),
+          createdAt: z.string().datetime({ offset: true }),
+          updatedAt: z.string().datetime({ offset: true }),
+        })
+        .passthrough()
+    ),
+    nextCursor: z.string().optional(),
+  })
+  .passthrough();
+const WaiverListResponse = z
+  .object({
+    data: z
+      .object({
+        items: z.array(
+          z
+            .object({
+              waiverId: z.string().regex(/^wvr_[0-9A-HJKMNP-TV-Z]{26}$/),
+              findingId: z.string().regex(/^fnd_[0-9A-HJKMNP-TV-Z]{26}$/),
+              status: z.enum(['proposed', 'approved', 'expired', 'revoked']),
+              expiresAt: z.string().datetime({ offset: true }),
+              justification: z.string().min(1),
+              requiredApprovals: z.number().int().gte(2).default(2),
+              approverCount: z.number().int().gte(0),
+              createdAt: z.string().datetime({ offset: true }),
+              updatedAt: z.string().datetime({ offset: true }),
+            })
+            .passthrough()
+        ),
+        nextCursor: z.string().optional(),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const FindingId = z.string();
+const Problem = z
+  .object({
+    type: z.string().url(),
+    title: z.string(),
+    status: z.number().int(),
+    detail: z.string(),
+    instance: z.string().url(),
+    code: z.string(),
+  })
+  .partial()
+  .passthrough();
+const WaiverId = z.string();
+const ResponseMeta = z
+  .object({
+    requestId: z.string().uuid(),
+    correlationId: z.string(),
+    generatedAt: z.string().datetime({ offset: true }),
+  })
+  .partial()
+  .passthrough();
+
+export const schemas: any = {
+  proposeWaiver_Body,
+  WaiverStatus,
+  Waiver,
+  WaiverCreateRequest,
+  WaiverApproveRequest,
+  WaiverResponse,
+  WaiverListData,
+  WaiverListResponse,
+  FindingId,
+  Problem,
+  WaiverId,
+  ResponseMeta,
+};
+
+const endpoints = makeApi([
+  {
+    method: 'get',
+    path: '/v1/waivers',
+    alias: 'listWaivers',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'cursor',
+        type: 'Query',
+        schema: z.string().min(1).max(512).optional(),
+      },
+      {
+        name: 'limit',
+        type: 'Query',
+        schema: z.number().int().gte(1).lte(100).optional().default(25),
+      },
+      {
+        name: 'findingId',
+        type: 'Query',
+        schema: z
+          .string()
+          .regex(/^fnd_[0-9A-HJKMNP-TV-Z]{26}$/)
+          .optional(),
+      },
+      {
+        name: 'status',
+        type: 'Query',
+        schema: z
+          .enum(['proposed', 'approved', 'expired', 'revoked'])
+          .optional(),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            items: z.array(
+              z
+                .object({
+                  waiverId: z.string().regex(/^wvr_[0-9A-HJKMNP-TV-Z]{26}$/),
+                  findingId: z.string().regex(/^fnd_[0-9A-HJKMNP-TV-Z]{26}$/),
+                  status: z.enum([
+                    'proposed',
+                    'approved',
+                    'expired',
+                    'revoked',
+                  ]),
+                  expiresAt: z.string().datetime({ offset: true }),
+                  justification: z.string().min(1),
+                  requiredApprovals: z.number().int().gte(2).default(2),
+                  approverCount: z.number().int().gte(0),
+                  createdAt: z.string().datetime({ offset: true }),
+                  updatedAt: z.string().datetime({ offset: true }),
+                })
+                .passthrough()
+            ),
+            nextCursor: z.string().optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v1/waivers',
+    alias: 'proposeWaiver',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: proposeWaiver_Body,
+      },
+      {
+        name: 'Idempotency-Key',
+        type: 'Header',
+        schema: z.string().min(1).max(128),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            waiverId: z.string().regex(/^wvr_[0-9A-HJKMNP-TV-Z]{26}$/),
+            findingId: z.string().regex(/^fnd_[0-9A-HJKMNP-TV-Z]{26}$/),
+            status: z.enum(['proposed', 'approved', 'expired', 'revoked']),
+            expiresAt: z.string().datetime({ offset: true }),
+            justification: z.string().min(1),
+            requiredApprovals: z.number().int().gte(2).default(2),
+            approverCount: z.number().int().gte(0),
+            createdAt: z.string().datetime({ offset: true }),
+            updatedAt: z.string().datetime({ offset: true }),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
+        description: `Malformed request`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/v1/waivers/:waiverId',
+    alias: 'getWaiver',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'waiverId',
+        type: 'Path',
+        schema: z.string().regex(/^wvr_[0-9A-HJKMNP-TV-Z]{26}$/),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            waiverId: z.string().regex(/^wvr_[0-9A-HJKMNP-TV-Z]{26}$/),
+            findingId: z.string().regex(/^fnd_[0-9A-HJKMNP-TV-Z]{26}$/),
+            status: z.enum(['proposed', 'approved', 'expired', 'revoked']),
+            expiresAt: z.string().datetime({ offset: true }),
+            justification: z.string().min(1),
+            requiredApprovals: z.number().int().gte(2).default(2),
+            approverCount: z.number().int().gte(0),
+            createdAt: z.string().datetime({ offset: true }),
+            updatedAt: z.string().datetime({ offset: true }),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v1/waivers/:waiverId/approve',
+    alias: 'approveWaiver',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: z
+          .object({ note: z.string().max(2000) })
+          .partial()
+          .passthrough()
+          .optional(),
+      },
+      {
+        name: 'waiverId',
+        type: 'Path',
+        schema: z.string().regex(/^wvr_[0-9A-HJKMNP-TV-Z]{26}$/),
+      },
+      {
+        name: 'Idempotency-Key',
+        type: 'Header',
+        schema: z.string().min(1).max(128),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            waiverId: z.string().regex(/^wvr_[0-9A-HJKMNP-TV-Z]{26}$/),
+            findingId: z.string().regex(/^fnd_[0-9A-HJKMNP-TV-Z]{26}$/),
+            status: z.enum(['proposed', 'approved', 'expired', 'revoked']),
+            expiresAt: z.string().datetime({ offset: true }),
+            justification: z.string().min(1),
+            requiredApprovals: z.number().int().gte(2).default(2),
+            approverCount: z.number().int().gte(0),
+            createdAt: z.string().datetime({ offset: true }),
+            updatedAt: z.string().datetime({ offset: true }),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 409,
+        description: `Idempotency key reuse with different body, or state conflict`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+]);
+
+export const api: any = new Zodios(
+  'https://api.ddd-codegen-starter.local/v1',
+  endpoints
+);
+
+export function createApiClient(baseUrl: string, options?: ZodiosOptions): any {
+  return new Zodios(baseUrl, endpoints, options);
+}

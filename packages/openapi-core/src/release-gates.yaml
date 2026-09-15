@@ -1,0 +1,188 @@
+openapi: 3.1.0
+info:
+  title: Vericlause Release Gates API
+  version: 0.1.0
+  description: |
+    Deploy allow/block decisions — criticals block by default (BR-1, BR-2).
+  license:
+    name: Proprietary
+    url: https://vericlause.local/license
+  x-domain: gat
+servers:
+  - url: https://api.vericlause.local
+    description: Vericlause API
+security:
+  - bearerAuth: []
+  - apiKey: []
+tags:
+  - name: ReleaseGates
+    description: Mainnet deploy blockers and allow decisions
+paths:
+  /v1/release-gates:
+    get:
+      operationId: listReleaseGates
+      tags: [ReleaseGates]
+      summary: List release gates
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: projectId
+          in: query
+          schema:
+            $ref: ./common/primitives.yaml#/components/schemas/ProjectId
+        - name: versionRef
+          in: query
+          schema:
+            type: string
+        - name: decision
+          in: query
+          schema:
+            type: string
+            enum: [allow, block]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, final]
+      responses:
+        '200':
+          description: Gates page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReleaseGateListResponse'
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: evaluateReleaseGate
+      tags: [ReleaseGates]
+      summary: Evaluate or create a release gate
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReleaseGateCreateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReleaseGateResponse'
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/release-gates/{gateId}:
+    get:
+      operationId: getReleaseGate
+      tags: [ReleaseGates]
+      summary: Get a release gate
+      parameters:
+        - name: gateId
+          in: path
+          required: true
+          schema:
+            $ref: ./common/primitives.yaml#/components/schemas/GateId
+      responses:
+        '200':
+          description: Gate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReleaseGateResponse'
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth
+  schemas:
+    GateDecision:
+      type: string
+      enum: [allow, block]
+    GateStatus:
+      type: string
+      enum: [pending, final]
+    ReleaseGate:
+      type: object
+      required: [gateId, projectId, versionRef, decision, status, openCriticalCount, createdAt, updatedAt]
+      properties:
+        gateId:
+          $ref: ./common/primitives.yaml#/components/schemas/GateId
+        projectId:
+          $ref: ./common/primitives.yaml#/components/schemas/ProjectId
+        versionRef:
+          type: string
+          minLength: 1
+        decision:
+          $ref: '#/components/schemas/GateDecision'
+        status:
+          $ref: '#/components/schemas/GateStatus'
+        openCriticalCount:
+          type: integer
+          minimum: 0
+        artefactId:
+          $ref: ./common/primitives.yaml#/components/schemas/ArtefactId
+        rationale:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ReleaseGateCreateRequest:
+      type: object
+      required: [projectId, versionRef]
+      properties:
+        projectId:
+          $ref: ./common/primitives.yaml#/components/schemas/ProjectId
+        versionRef:
+          type: string
+          minLength: 1
+        decision:
+          $ref: '#/components/schemas/GateDecision'
+        status:
+          $ref: '#/components/schemas/GateStatus'
+        rationale:
+          type: string
+    ReleaseGateResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ReleaseGate'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    ReleaseGateListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReleaseGate'
+        nextCursor:
+          type: string
+    ReleaseGateListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ReleaseGateListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

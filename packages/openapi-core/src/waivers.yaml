@@ -1,0 +1,218 @@
+openapi: 3.1.0
+info:
+  title: Vericlause Waivers API
+  version: 0.1.0
+  description: |
+    Dual-control waivers with expiry for critical findings (BR-2).
+  license:
+    name: Proprietary
+    url: https://vericlause.local/license
+  x-domain: wvr
+servers:
+  - url: https://api.vericlause.local
+    description: Vericlause API
+security:
+  - bearerAuth: []
+  - apiKey: []
+tags:
+  - name: Waivers
+    description: Dual-control exceptions with expiry
+paths:
+  /v1/waivers:
+    get:
+      operationId: listWaivers
+      tags: [Waivers]
+      summary: List waivers
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: findingId
+          in: query
+          schema:
+            $ref: ./common/primitives.yaml#/components/schemas/FindingId
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [proposed, approved, expired, revoked]
+      responses:
+        '200':
+          description: Waivers page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WaiverListResponse'
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: proposeWaiver
+      tags: [Waivers]
+      summary: Propose a waiver
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WaiverCreateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WaiverResponse'
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/waivers/{waiverId}:
+    get:
+      operationId: getWaiver
+      tags: [Waivers]
+      summary: Get a waiver
+      parameters:
+        - name: waiverId
+          in: path
+          required: true
+          schema:
+            $ref: ./common/primitives.yaml#/components/schemas/WaiverId
+      responses:
+        '200':
+          description: Waiver
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WaiverResponse'
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/waivers/{waiverId}/approve:
+    post:
+      operationId: approveWaiver
+      tags: [Waivers]
+      summary: Dual-control approve a waiver
+      parameters:
+        - name: waiverId
+          in: path
+          required: true
+          schema:
+            $ref: ./common/primitives.yaml#/components/schemas/WaiverId
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WaiverApproveRequest'
+      responses:
+        '200':
+          description: Approved (or pending second control)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WaiverResponse'
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        '409':
+          $ref: ./common/responses.yaml#/components/responses/Conflict
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth
+  schemas:
+    WaiverStatus:
+      type: string
+      enum: [proposed, approved, expired, revoked]
+    Waiver:
+      type: object
+      required: [waiverId, findingId, status, expiresAt, justification, requiredApprovals, approverCount, createdAt, updatedAt]
+      properties:
+        waiverId:
+          $ref: ./common/primitives.yaml#/components/schemas/WaiverId
+        findingId:
+          $ref: ./common/primitives.yaml#/components/schemas/FindingId
+        status:
+          $ref: '#/components/schemas/WaiverStatus'
+        expiresAt:
+          type: string
+          format: date-time
+        justification:
+          type: string
+          minLength: 1
+        requiredApprovals:
+          type: integer
+          minimum: 2
+          default: 2
+          description: Dual-control requires at least two approvals
+        approverCount:
+          type: integer
+          minimum: 0
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    WaiverCreateRequest:
+      type: object
+      required: [findingId, expiresAt, justification]
+      properties:
+        findingId:
+          $ref: ./common/primitives.yaml#/components/schemas/FindingId
+        expiresAt:
+          type: string
+          format: date-time
+        justification:
+          type: string
+          minLength: 1
+        requiredApprovals:
+          type: integer
+          minimum: 2
+          default: 2
+    WaiverApproveRequest:
+      type: object
+      properties:
+        note:
+          type: string
+          maxLength: 2000
+    WaiverResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/Waiver'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    WaiverListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Waiver'
+        nextCursor:
+          type: string
+    WaiverListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/WaiverListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

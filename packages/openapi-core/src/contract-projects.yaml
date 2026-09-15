@@ -1,0 +1,391 @@
+openapi: 3.1.0
+info:
+  title: Vericlause Contract Projects API
+  version: 0.1.0
+  description: |
+    Contract portfolio inventory and versions — private-mode source boundary,
+    heatmap inputs, and CI version refs (BR-7, BR-9, BR-12).
+  license:
+    name: Proprietary
+    url: https://vericlause.local/license
+  x-domain: prj
+servers:
+  - url: https://api.vericlause.local
+    description: Vericlause API
+security:
+  - bearerAuth: []
+  - apiKey: []
+tags:
+  - name: ContractProjects
+    description: Contract portfolio projects
+  - name: ContractVersions
+    description: Deploy-candidate versions within a project
+paths:
+  /v1/contract-projects:
+    get:
+      operationId: listContractProjects
+      tags: [ContractProjects]
+      summary: List contract projects
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, archived]
+      responses:
+        '200':
+          description: Projects page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractProjectListResponse'
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createContractProject
+      tags: [ContractProjects]
+      summary: Create a contract project
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContractProjectCreateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractProjectResponse'
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/contract-projects/{projectId}:
+    get:
+      operationId: getContractProject
+      tags: [ContractProjects]
+      summary: Get a contract project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            $ref: ./common/primitives.yaml#/components/schemas/ProjectId
+      responses:
+        '200':
+          description: Project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractProjectResponse'
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    patch:
+      operationId: updateContractProject
+      tags: [ContractProjects]
+      summary: Update project settings (including private mode)
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            $ref: ./common/primitives.yaml#/components/schemas/ProjectId
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContractProjectUpdateRequest'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractProjectResponse'
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/contract-projects/{projectId}/versions:
+    get:
+      operationId: listContractVersions
+      tags: [ContractVersions]
+      summary: List versions for a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            $ref: ./common/primitives.yaml#/components/schemas/ProjectId
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Versions page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractVersionListResponse'
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createContractVersion
+      tags: [ContractVersions]
+      summary: Register a deploy-candidate version
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            $ref: ./common/primitives.yaml#/components/schemas/ProjectId
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContractVersionCreateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractVersionResponse'
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/contract-projects/{projectId}/versions/{versionId}:
+    get:
+      operationId: getContractVersion
+      tags: [ContractVersions]
+      summary: Get a contract version
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            $ref: ./common/primitives.yaml#/components/schemas/ProjectId
+        - name: versionId
+          in: path
+          required: true
+          schema:
+            $ref: ./common/primitives.yaml#/components/schemas/VersionId
+      responses:
+        '200':
+          description: Version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractVersionResponse'
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth
+  schemas:
+    ContractLanguage:
+      type: string
+      enum: [solidity, vyper, other]
+    ProjectStatus:
+      type: string
+      enum: [active, archived]
+    ValueAtRiskBand:
+      type: string
+      enum: [under1m, band1to10m, band10to50m, band50to180m, over180m]
+      description: Historical exploit loss bands for portfolio reporting (BR-12)
+    ContractProject:
+      type: object
+      required: [projectId, name, status, language, privateMode, openCriticalCount, createdAt, updatedAt]
+      properties:
+        projectId:
+          $ref: ./common/primitives.yaml#/components/schemas/ProjectId
+        name:
+          type: string
+          minLength: 1
+        status:
+          $ref: '#/components/schemas/ProjectStatus'
+        language:
+          $ref: '#/components/schemas/ContractLanguage'
+        repoUri:
+          type: string
+          format: uri
+        privateMode:
+          type: boolean
+          description: Keep source within customer boundary (BR-7)
+        openCriticalCount:
+          type: integer
+          minimum: 0
+        waiverDebtDays:
+          type: integer
+          minimum: 0
+        valueAtRiskBand:
+          $ref: '#/components/schemas/ValueAtRiskBand'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ContractProjectCreateRequest:
+      type: object
+      required: [name, language]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        language:
+          $ref: '#/components/schemas/ContractLanguage'
+        repoUri:
+          type: string
+          format: uri
+        privateMode:
+          type: boolean
+          default: true
+        valueAtRiskBand:
+          $ref: '#/components/schemas/ValueAtRiskBand'
+    ContractProjectUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        status:
+          $ref: '#/components/schemas/ProjectStatus'
+        repoUri:
+          type: string
+          format: uri
+        privateMode:
+          type: boolean
+        valueAtRiskBand:
+          $ref: '#/components/schemas/ValueAtRiskBand'
+    ContractVersionStatus:
+      type: string
+      enum: [draft, inReview, gated, released, superseded]
+    ContractVersion:
+      type: object
+      required: [versionId, projectId, versionRef, status, createdAt, updatedAt]
+      properties:
+        versionId:
+          $ref: ./common/primitives.yaml#/components/schemas/VersionId
+        projectId:
+          $ref: ./common/primitives.yaml#/components/schemas/ProjectId
+        versionRef:
+          type: string
+          description: Commit SHA, tag, or CI build id
+          minLength: 1
+        commitSha:
+          type: string
+        branch:
+          type: string
+        status:
+          $ref: '#/components/schemas/ContractVersionStatus'
+        prUri:
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ContractVersionCreateRequest:
+      type: object
+      required: [versionRef]
+      properties:
+        versionRef:
+          type: string
+          minLength: 1
+        commitSha:
+          type: string
+        branch:
+          type: string
+        prUri:
+          type: string
+          format: uri
+    ContractProjectResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ContractProject'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    ContractProjectListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContractProject'
+        nextCursor:
+          type: string
+    ContractProjectListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ContractProjectListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    ContractVersionResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ContractVersion'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    ContractVersionListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContractVersion'
+        nextCursor:
+          type: string
+    ContractVersionListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ContractVersionListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

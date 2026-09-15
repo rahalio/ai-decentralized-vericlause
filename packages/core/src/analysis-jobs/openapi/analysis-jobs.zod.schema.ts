@@ -1,0 +1,488 @@
+import { makeApi, Zodios, type ZodiosOptions } from '@zodios/core';
+import { z } from 'zod';
+
+const createAnalysisJob_Body = z
+  .object({
+    projectId: z.string().regex(/^prj_[0-9A-HJKMNP-TV-Z]{26}$/),
+    versionRef: z.string().min(1),
+    jobType: z.enum(['formalVerification', 'searchBasedTesting', 'combined']),
+    slaPolicy: z
+      .enum(['failClosed', 'failOpen'])
+      .optional()
+      .default('failClosed'),
+  })
+  .passthrough();
+const AnalysisJobType = z.enum([
+  'formalVerification',
+  'searchBasedTesting',
+  'combined',
+]);
+const AnalysisJobStatus = z.enum([
+  'queued',
+  'running',
+  'succeeded',
+  'failed',
+  'slaBreached',
+]);
+const SlaPolicy = z.enum(['failClosed', 'failOpen']);
+const AnalysisJob = z
+  .object({
+    jobId: z.string().regex(/^job_[0-9A-HJKMNP-TV-Z]{26}$/),
+    projectId: z.string().regex(/^prj_[0-9A-HJKMNP-TV-Z]{26}$/),
+    versionRef: z.string().min(1),
+    jobType: z.enum(['formalVerification', 'searchBasedTesting', 'combined']),
+    status: z.enum(['queued', 'running', 'succeeded', 'failed', 'slaBreached']),
+    slaPolicy: z.enum(['failClosed', 'failOpen']).optional(),
+    slaBreached: z.boolean().optional(),
+    startedAt: z.string().datetime({ offset: true }).optional(),
+    finishedAt: z.string().datetime({ offset: true }).optional(),
+    createdAt: z.string().datetime({ offset: true }),
+  })
+  .passthrough();
+const AnalysisJobCreateRequest = z
+  .object({
+    projectId: z.string().regex(/^prj_[0-9A-HJKMNP-TV-Z]{26}$/),
+    versionRef: z.string().min(1),
+    jobType: z.enum(['formalVerification', 'searchBasedTesting', 'combined']),
+    slaPolicy: z
+      .enum(['failClosed', 'failOpen'])
+      .optional()
+      .default('failClosed'),
+  })
+  .passthrough();
+const AnalysisJobResponse = z
+  .object({
+    data: z
+      .object({
+        jobId: z.string().regex(/^job_[0-9A-HJKMNP-TV-Z]{26}$/),
+        projectId: z.string().regex(/^prj_[0-9A-HJKMNP-TV-Z]{26}$/),
+        versionRef: z.string().min(1),
+        jobType: z.enum([
+          'formalVerification',
+          'searchBasedTesting',
+          'combined',
+        ]),
+        status: z.enum([
+          'queued',
+          'running',
+          'succeeded',
+          'failed',
+          'slaBreached',
+        ]),
+        slaPolicy: z.enum(['failClosed', 'failOpen']).optional(),
+        slaBreached: z.boolean().optional(),
+        startedAt: z.string().datetime({ offset: true }).optional(),
+        finishedAt: z.string().datetime({ offset: true }).optional(),
+        createdAt: z.string().datetime({ offset: true }),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const AnalysisJobListData = z
+  .object({
+    items: z.array(
+      z
+        .object({
+          jobId: z.string().regex(/^job_[0-9A-HJKMNP-TV-Z]{26}$/),
+          projectId: z.string().regex(/^prj_[0-9A-HJKMNP-TV-Z]{26}$/),
+          versionRef: z.string().min(1),
+          jobType: z.enum([
+            'formalVerification',
+            'searchBasedTesting',
+            'combined',
+          ]),
+          status: z.enum([
+            'queued',
+            'running',
+            'succeeded',
+            'failed',
+            'slaBreached',
+          ]),
+          slaPolicy: z.enum(['failClosed', 'failOpen']).optional(),
+          slaBreached: z.boolean().optional(),
+          startedAt: z.string().datetime({ offset: true }).optional(),
+          finishedAt: z.string().datetime({ offset: true }).optional(),
+          createdAt: z.string().datetime({ offset: true }),
+        })
+        .passthrough()
+    ),
+    nextCursor: z.string().optional(),
+  })
+  .passthrough();
+const AnalysisJobListResponse = z
+  .object({
+    data: z
+      .object({
+        items: z.array(
+          z
+            .object({
+              jobId: z.string().regex(/^job_[0-9A-HJKMNP-TV-Z]{26}$/),
+              projectId: z.string().regex(/^prj_[0-9A-HJKMNP-TV-Z]{26}$/),
+              versionRef: z.string().min(1),
+              jobType: z.enum([
+                'formalVerification',
+                'searchBasedTesting',
+                'combined',
+              ]),
+              status: z.enum([
+                'queued',
+                'running',
+                'succeeded',
+                'failed',
+                'slaBreached',
+              ]),
+              slaPolicy: z.enum(['failClosed', 'failOpen']).optional(),
+              slaBreached: z.boolean().optional(),
+              startedAt: z.string().datetime({ offset: true }).optional(),
+              finishedAt: z.string().datetime({ offset: true }).optional(),
+              createdAt: z.string().datetime({ offset: true }),
+            })
+            .passthrough()
+        ),
+        nextCursor: z.string().optional(),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const ProjectId = z.string();
+const Problem = z
+  .object({
+    type: z.string().url(),
+    title: z.string(),
+    status: z.number().int(),
+    detail: z.string(),
+    instance: z.string().url(),
+    code: z.string(),
+  })
+  .partial()
+  .passthrough();
+const AnalysisJobId = z.string();
+const ResponseMeta = z
+  .object({
+    requestId: z.string().uuid(),
+    correlationId: z.string(),
+    generatedAt: z.string().datetime({ offset: true }),
+  })
+  .partial()
+  .passthrough();
+
+export const schemas: any = {
+  createAnalysisJob_Body,
+  AnalysisJobType,
+  AnalysisJobStatus,
+  SlaPolicy,
+  AnalysisJob,
+  AnalysisJobCreateRequest,
+  AnalysisJobResponse,
+  AnalysisJobListData,
+  AnalysisJobListResponse,
+  ProjectId,
+  Problem,
+  AnalysisJobId,
+  ResponseMeta,
+};
+
+const endpoints = makeApi([
+  {
+    method: 'get',
+    path: '/v1/analysis-jobs',
+    alias: 'listAnalysisJobs',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'cursor',
+        type: 'Query',
+        schema: z.string().min(1).max(512).optional(),
+      },
+      {
+        name: 'limit',
+        type: 'Query',
+        schema: z.number().int().gte(1).lte(100).optional().default(25),
+      },
+      {
+        name: 'projectId',
+        type: 'Query',
+        schema: z
+          .string()
+          .regex(/^prj_[0-9A-HJKMNP-TV-Z]{26}$/)
+          .optional(),
+      },
+      {
+        name: 'versionRef',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'status',
+        type: 'Query',
+        schema: z
+          .enum(['queued', 'running', 'succeeded', 'failed', 'slaBreached'])
+          .optional(),
+      },
+      {
+        name: 'jobType',
+        type: 'Query',
+        schema: z
+          .enum(['formalVerification', 'searchBasedTesting', 'combined'])
+          .optional(),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            items: z.array(
+              z
+                .object({
+                  jobId: z.string().regex(/^job_[0-9A-HJKMNP-TV-Z]{26}$/),
+                  projectId: z.string().regex(/^prj_[0-9A-HJKMNP-TV-Z]{26}$/),
+                  versionRef: z.string().min(1),
+                  jobType: z.enum([
+                    'formalVerification',
+                    'searchBasedTesting',
+                    'combined',
+                  ]),
+                  status: z.enum([
+                    'queued',
+                    'running',
+                    'succeeded',
+                    'failed',
+                    'slaBreached',
+                  ]),
+                  slaPolicy: z.enum(['failClosed', 'failOpen']).optional(),
+                  slaBreached: z.boolean().optional(),
+                  startedAt: z.string().datetime({ offset: true }).optional(),
+                  finishedAt: z.string().datetime({ offset: true }).optional(),
+                  createdAt: z.string().datetime({ offset: true }),
+                })
+                .passthrough()
+            ),
+            nextCursor: z.string().optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v1/analysis-jobs',
+    alias: 'createAnalysisJob',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: createAnalysisJob_Body,
+      },
+      {
+        name: 'Idempotency-Key',
+        type: 'Header',
+        schema: z.string().min(1).max(128),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            jobId: z.string().regex(/^job_[0-9A-HJKMNP-TV-Z]{26}$/),
+            projectId: z.string().regex(/^prj_[0-9A-HJKMNP-TV-Z]{26}$/),
+            versionRef: z.string().min(1),
+            jobType: z.enum([
+              'formalVerification',
+              'searchBasedTesting',
+              'combined',
+            ]),
+            status: z.enum([
+              'queued',
+              'running',
+              'succeeded',
+              'failed',
+              'slaBreached',
+            ]),
+            slaPolicy: z.enum(['failClosed', 'failOpen']).optional(),
+            slaBreached: z.boolean().optional(),
+            startedAt: z.string().datetime({ offset: true }).optional(),
+            finishedAt: z.string().datetime({ offset: true }).optional(),
+            createdAt: z.string().datetime({ offset: true }),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
+        description: `Malformed request`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/v1/analysis-jobs/:jobId',
+    alias: 'getAnalysisJob',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'jobId',
+        type: 'Path',
+        schema: z.string().regex(/^job_[0-9A-HJKMNP-TV-Z]{26}$/),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            jobId: z.string().regex(/^job_[0-9A-HJKMNP-TV-Z]{26}$/),
+            projectId: z.string().regex(/^prj_[0-9A-HJKMNP-TV-Z]{26}$/),
+            versionRef: z.string().min(1),
+            jobType: z.enum([
+              'formalVerification',
+              'searchBasedTesting',
+              'combined',
+            ]),
+            status: z.enum([
+              'queued',
+              'running',
+              'succeeded',
+              'failed',
+              'slaBreached',
+            ]),
+            slaPolicy: z.enum(['failClosed', 'failOpen']).optional(),
+            slaBreached: z.boolean().optional(),
+            startedAt: z.string().datetime({ offset: true }).optional(),
+            finishedAt: z.string().datetime({ offset: true }).optional(),
+            createdAt: z.string().datetime({ offset: true }),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+]);
+
+export const api: any = new Zodios(
+  'https://api.ddd-codegen-starter.local/v1',
+  endpoints
+);
+
+export function createApiClient(baseUrl: string, options?: ZodiosOptions): any {
+  return new Zodios(baseUrl, endpoints, options);
+}
